@@ -7,7 +7,7 @@ from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from werkzeug.utils import secure_filename
-from wtforms import SubmitField, TextAreaField
+from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length
 
 from app.extensions import db
