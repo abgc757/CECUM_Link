@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6">Chats</h2>
+        <ul class="list-group">
+          {% for c in conversations %}
+          <li class="list-group-item">
+            <a href="{{ url_for('chat.index', conversation_id=c.id) }}">
+              {{ c.name or ('Chat #' ~ c.id) }}
+            </a>
+          </li>
+          {% else %}
+          <li class="list-group-item">Sin conversaciones.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6">Mensajeria instantanea</h2>
+        {% if selected %}
+          <div class="chat-box border rounded p-2 mb-3">
+            {% for m in messages %}
+            <p class="mb-1"><strong>{{ m.sender_id }}:</strong> {{ m.content }}</p>
+            {% else %}
+            <p class="text-muted">Aun sin mensajes.</p>
+            {% endfor %}
+          </div>
+          <form method="post" action="{{ url_for('chat.send_message', conversation_id=selected.id) }}">
+            <div class="input-group">
+              <input name="content" class="form-control" placeholder="Escribe un mensaje">
+              <button class="btn btn-primary">Enviar</button>
+            </div>
+          </form>
+        {% else %}
+          <p>Selecciona un chat para comenzar.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

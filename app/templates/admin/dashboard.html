@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h4 mb-3">Panel de moderacion</h1>
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="h6">Usuarios</h2>
+        <ul class="list-group">
+          {% for u in users %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>@{{ u.username }} - {{ u.role }}</span>
+            {% if u.role != 'moderator' %}
+            <form method="post" action="{{ url_for('admin.promote', user_id=u.id) }}">
+              <button class="btn btn-sm btn-outline-success">Promover</button>
+            </form>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6">Publicaciones</h2>
+        <ul class="list-group">
+          {% for p in posts %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span class="text-truncate">{{ p.content }}</span>
+            <form method="post" action="{{ url_for('admin.delete_post', post_id=p.id) }}">
+              <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+body {
+  background-color: #f5f7fb;
+}
+
+.chat-box {
+  min-height: 260px;
+  max-height: 340px;
+  overflow-y: auto;
+  background: #ffffff;
+}

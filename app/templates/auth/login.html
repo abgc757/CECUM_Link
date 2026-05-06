@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-body">
+        <h1 class="h4 mb-3">Iniciar sesion</h1>
+        <form method="post">
+          {{ form.hidden_tag() }}
+          <div class="mb-3">{{ form.identifier.label }}{{ form.identifier(class="form-control") }}</div>
+          <div class="mb-3">{{ form.password.label }}{{ form.password(class="form-control") }}</div>
+          {{ form.submit(class="btn btn-primary w-100") }}
+        </form>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-link mt-2">Crear cuenta</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

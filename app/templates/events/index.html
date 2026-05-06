@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="h5">Calendario escolar</h2>
+        <p class="text-muted">Eventos proximos para alumnos y docentes.</p>
+        <ul class="list-group">
+          {% for event in events %}
+          <li class="list-group-item">
+            <strong>{{ event.title }}</strong><br>
+            <small>{{ event.starts_at.strftime('%d/%m %H:%M') }} - {{ event.ends_at.strftime('%d/%m %H:%M') }}</small>
+          </li>
+          {% else %}
+          <li class="list-group-item">Sin eventos programados.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h5">Crear evento (moderadores/docentes)</h2>
+        <form method="post">
+          {{ form.hidden_tag() }}
+          <div class="mb-2">{{ form.title(class="form-control", placeholder="Titulo") }}</div>
+          <div class="mb-2">{{ form.description(class="form-control", rows="3") }}</div>
+          <div class="mb-2">{{ form.location(class="form-control", placeholder="Ubicacion") }}</div>
+          <div class="row g-2 mb-2">
+            <div class="col">{{ form.starts_at(class="form-control") }}</div>
+            <div class="col">{{ form.ends_at(class="form-control") }}</div>
+          </div>
+          {{ form.submit(class="btn btn-success") }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
