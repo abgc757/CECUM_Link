@@ -32,7 +32,8 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), default=UserRole.STUDENT.value, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    posts = db.relationship("Post", backref="author", lazy=True, cascade="all, delete-orphan")
+    # posts = db.relationship("Post", backref="author", lazy=True, cascade="all, delete-orphan")
+    posts = db.relationship("Post", foreign_keys="Post.user_id", backref="author", lazy=True, cascade="all, delete-orphan")
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
