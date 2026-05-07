@@ -46,4 +46,4 @@ def index():
         return redirect(url_for("events.index"))
 
     upcoming = Event.query.filter(Event.ends_at >= datetime.utcnow()).order_by(Event.starts_at.asc()).all()
-    return render_template("events/index.html", form=form, events=upcoming)
+    return render_template("events/index.html", form=form, events=upcoming, can_create_event=current_user.is_moderator)

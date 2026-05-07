@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Revision de contenido archivado</h1>
+  {% if current_user.is_admin %}
+  <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.dashboard') }}">Ir a administracion</a>
+  {% endif %}
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card mb-3 fade-in-up">
+      <div class="card-body">
+        <h2 class="h6">Posts archivados</h2>
+        <ul class="list-group">
+          {% for p in archived_posts %}
+          <li class="list-group-item">
+            <p class="mb-1">{{ p.content }}</p>
+            <small class="text-muted d-block mb-2">Motivo: {{ p.archived_reason or 'Sin motivo' }}</small>
+            <form method="post" action="{{ url_for('admin.unarchive_post', post_id=p.id) }}">
+              <button class="btn btn-sm btn-outline-success">Restaurar post</button>
+            </form>
+          </li>
+          {% else %}
+          <li class="list-group-item">
+            <div class="empty-state">
+              <i class="bi bi-check2-circle"></i>
+              <p class="mb-0">No hay posts archivados.</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card fade-in-up">
+      <div class="card-body">
+        <h2 class="h6">Comentarios archivados</h2>
+        <ul class="list-group">
+          {% for c in archived_comments %}
+          <li class="list-group-item">
+            <p class="mb-1">{{ c.content }}</p>
+            <small class="text-muted d-block mb-2">Motivo: {{ c.archived_reason or 'Sin motivo' }}</small>
+            <form method="post" action="{{ url_for('admin.unarchive_comment', comment_id=c.id) }}">
+              <button class="btn btn-sm btn-outline-success">Restaurar comentario</button>
+            </form>
+          </li>
+          {% else %}
+          <li class="list-group-item">
+            <div class="empty-state">
+              <i class="bi bi-check2-circle"></i>
+              <p class="mb-0">No hay comentarios archivados.</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -2,7 +2,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-from flask import Blueprint, current_app, flash, redirect, render_template, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
@@ -62,14 +62,20 @@ def feed():
         flash("Publicacion creada.", "success")
         return redirect(url_for("posts.feed"))
 
-    posts = Post.query.order_by(Post.created_at.desc()).all()
+    posts = Post.query.filter_by(is_archived=False).order_by(Post.created_at.desc()).all()
     comment_form = CommentForm()
     reaction_stats = {}
     for post in posts:
         counts = Counter([reaction.reaction_type for reaction in post.reactions])
         reaction_stats[post.id] = dict(counts)
 
-    return render_template("posts/feed.html", form=form, posts=posts, comment_form=comment_form, reaction_stats=reaction_stats)
+    return render_template(
+        "posts/feed.html",
+        form=form,
+        posts=posts,
+        comment_form=comment_form,
+        reaction_stats=reaction_stats,
+    )
 
 
 @posts_bp.route("/posts/<int:post_id>/react/<reaction_type>", methods=["POST"])
@@ -105,4 +111,38 @@ def comment(post_id: int):
         flash("Comentario agregado.", "success")
     else:
         flash("Comentario invalido.", "danger")
+    return redirect(url_for("posts.feed"))
+
+
+@posts_bp.route("/posts/<int:post_id>/archive", methods=["POST"])
+@login_required
+def archive_post(post_id: int):
+    if not current_user.is_moderator:
+        flash("Solo moderadores/docentes pueden archivar publicaciones.", "danger")
+        return redirect(url_for("posts.feed"))
+    post = Post.query.get_or_404(post_id)
+    reason = (request.form.get("reason") or "").strip()
+    post.is_archived = True
+    post.archived_reason = reason[:255]
+    post.archived_by = current_user.id
+    post.archived_at = datetime.utcnow()
+    db.session.commit()
+    flash("Publicacion archivada para revision.", "info")
+    return redirect(url_for("posts.feed"))
+
+
+@posts_bp.route("/comments/<int:comment_id>/archive", methods=["POST"])
+@login_required
+def archive_comment(comment_id: int):
+    if not current_user.is_moderator:
+        flash("Solo moderadores/docentes pueden archivar comentarios.", "danger")
+        return redirect(url_for("posts.feed"))
+    comment_obj = Comment.query.get_or_404(comment_id)
+    reason = (request.form.get("reason") or "").strip()
+    comment_obj.is_archived = True
+    comment_obj.archived_reason = reason[:255]
+    comment_obj.archived_by = current_user.id
+    comment_obj.archived_at = datetime.utcnow()
+    db.session.commit()
+    flash("Comentario archivado para revision.", "info")
     return redirect(url_for("posts.feed"))

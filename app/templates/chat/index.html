@@ -2,9 +2,37 @@
 {% block content %}
 <div class="row">
   <div class="col-md-4">
-    <div class="card">
+    <div class="card mb-3 mb-md-0 fade-in-up">
       <div class="card-body">
-        <h2 class="h6">Chats</h2>
+        <h2 class="h6"><i class="bi bi-people me-2"></i>Chats</h2>
+        <p class="text-muted small">Crea un chat privado seleccionando un usuario o crea un grupo con varios miembros.</p>
+        <div class="mb-3">
+          <h3 class="h6 mb-2">Crear chat privado</h3>
+          <form method="post" action="{{ url_for('chat.new_private') }}">
+            <div class="input-group">
+              <select class="form-select" name="user_id" required>
+                <option value="">Selecciona usuario</option>
+                {% for u in users %}
+                <option value="{{ u.id }}">@{{ u.username }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn btn-outline-primary" type="submit">Abrir</button>
+            </div>
+          </form>
+        </div>
+        <div class="mb-3">
+          <h3 class="h6 mb-2">Crear chat grupal</h3>
+          <form method="post" action="{{ url_for('chat.new_group') }}">
+            <input name="name" class="form-control mb-2" placeholder="Nombre del grupo (opcional)">
+            <select class="form-select mb-2" name="member_ids" multiple size="4">
+              {% for u in users %}
+              <option value="{{ u.id }}">@{{ u.username }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-muted d-block mb-2">Mantén Ctrl para seleccionar varios usuarios.</small>
+            <button class="btn btn-sm btn-outline-success" type="submit">Crear grupo</button>
+          </form>
+        </div>
         <ul class="list-group">
           {% for c in conversations %}
           <li class="list-group-item">
@@ -13,20 +41,25 @@
             </a>
           </li>
           {% else %}
-          <li class="list-group-item">Sin conversaciones.</li>
+          <li class="list-group-item">
+            <div class="empty-state">
+              <i class="bi bi-chat-square"></i>
+              <p class="mb-0">Sin conversaciones aun.</p>
+            </div>
+          </li>
           {% endfor %}
         </ul>
       </div>
     </div>
   </div>
   <div class="col-md-8">
-    <div class="card">
+    <div class="card fade-in-up">
       <div class="card-body">
-        <h2 class="h6">Mensajeria instantanea</h2>
+        <h2 class="h6"><i class="bi bi-chat-dots me-2"></i>Mensajeria instantanea</h2>
         {% if selected %}
           <div class="chat-box border rounded p-2 mb-3">
             {% for m in messages %}
-            <p class="mb-1"><strong>{{ m.sender_id }}:</strong> {{ m.content }}</p>
+            <p class="mb-2 chat-message"><strong>@{{ m.sender.username if m.sender else ('user-' ~ m.sender_id) }}:</strong> {{ m.content }}</p>
             {% else %}
             <p class="text-muted">Aun sin mensajes.</p>
             {% endfor %}
@@ -38,7 +71,10 @@
             </div>
           </form>
         {% else %}
-          <p>Selecciona un chat para comenzar.</p>
+          <div class="empty-state">
+            <i class="bi bi-cursor"></i>
+            <p class="mb-0">Selecciona un chat para comenzar.</p>
+          </div>
         {% endif %}
       </div>
     </div>

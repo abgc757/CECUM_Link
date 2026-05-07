@@ -12,3 +12,4 @@ class Config:
     ENV = os.getenv("FLASK_ENV", "development")
     DEBUG = ENV == "development"
     MAX_CONTENT_LENGTH = int(os.getenv("MAX_UPLOAD_MB", "50")) * 1024 * 1024
+    BI_API_KEY = os.getenv("BI_API_KEY", "")

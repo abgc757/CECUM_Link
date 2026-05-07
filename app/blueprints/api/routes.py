@@ -1,10 +1,27 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user, login_required
+from sqlalchemy import text
 
-from app.extensions import db
+from app.extensions import csrf, db
 from app.models import Event, Post
 
 api_bp = Blueprint("api", __name__)
+
+
+def _validate_readonly_sql(query: str):
+    normalized = " ".join((query or "").strip().split())
+    if not normalized:
+        return "query is required"
+    if ";" in normalized.rstrip(";"):
+        return "only one SQL statement is allowed"
+    first_word = normalized.split(" ", 1)[0].lower()
+    if first_word not in {"select", "with", "pragma"}:
+        return "only read-only SQL is allowed"
+    forbidden = {"insert", "update", "delete", "drop", "alter", "create", "truncate", "replace"}
+    lowered = normalized.lower()
+    if any(token in lowered for token in forbidden):
+        return "forbidden SQL keyword detected"
+    return None
 
 
 @api_bp.get("/health")
@@ -65,3 +82,28 @@ def list_events():
             for e in events
         ]
     )
+
+
+@api_bp.post("/bi/query")
+@csrf.exempt
+def bi_query():
+    api_key = request.headers.get("X-BI-API-KEY", "")
+    expected = current_app.config.get("BI_API_KEY", "")
+    if not expected or api_key != expected:
+        return jsonify({"error": "unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    query = (data.get("query") or "").strip()
+    limit = int(data.get("limit", 500))
+    limit = max(1, min(limit, 5000))
+
+    err = _validate_readonly_sql(query)
+    if err:
+        return jsonify({"error": err}), 400
+
+    safe_query = f"SELECT * FROM ({query}) AS q LIMIT :limit" if not query.lower().startswith("pragma") else query
+    params = {"limit": limit} if "limit" in safe_query else {}
+    result = db.session.execute(text(safe_query), params)
+    rows = [dict(item) for item in result.mappings().all()]
+    columns = list(rows[0].keys()) if rows else []
+    return jsonify({"columns": columns, "rows": rows, "row_count": len(rows)})

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
+<div class="card fade-in-up">
   <div class="card-body">
-    <h1 class="h5">Panel de notificaciones</h1>
+    <h1 class="h5"><i class="bi bi-bell me-2"></i>Panel de notificaciones</h1>
     <ul class="list-group">
       {% for n in notifications %}
       <li class="list-group-item d-flex justify-content-between">
@@ -10,7 +10,12 @@
         <small>{{ n.created_at.strftime('%d/%m %H:%M') }}</small>
       </li>
       {% else %}
-      <li class="list-group-item">No hay notificaciones.</li>
+      <li class="list-group-item">
+        <div class="empty-state">
+          <i class="bi bi-bell-slash"></i>
+          <p class="mb-0">No hay notificaciones por el momento.</p>
+        </div>
+      </li>
       {% endfor %}
     </ul>
   </div>

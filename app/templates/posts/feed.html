@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card mb-4">
+<div class="card mb-4 fade-in-up">
   <div class="card-body">
-    <h2 class="h5">Nueva publicacion</h2>
+    <h2 class="h5 mb-3"><i class="bi bi-pencil-square me-2"></i>Nueva publicacion</h2>
     <form method="post" enctype="multipart/form-data">
       {{ form.hidden_tag() }}
       <div class="mb-2">{{ form.content(class="form-control", rows="3", placeholder="Comparte algo con la comunidad...") }}</div>
@@ -14,20 +14,20 @@
         ) }}
         <small class="text-muted">Unico boton para subir imagen/video o abrir camara del dispositivo (si el navegador lo soporta).</small>
       </div>
-      {{ form.submit(class="btn btn-primary") }}
+      {{ form.submit(class="btn btn-primary px-4") }}
     </form>
   </div>
 </div>
 
 {% for post in posts %}
-<article class="card mb-3">
+<article class="card mb-3 post-card fade-in-up">
   <div class="card-body">
     <h3 class="h6 mb-1">@{{ post.author.username }}</h3>
     <p>{{ post.content }}</p>
     {% if post.media_url and post.media_type == 'photo' %}
-      <img src="{{ post.media_url }}" alt="Imagen de publicacion" class="img-fluid rounded mb-2">
+      <img src="{{ post.media_url }}" alt="Imagen de publicacion" class="post-media mb-2">
     {% elif post.media_url and post.media_type == 'video' %}
-      <video controls class="w-100 rounded mb-2" style="max-height: 420px;">
+      <video controls class="post-media mb-2" style="max-height: 420px;">
         <source src="{{ post.media_url }}">
       </video>
     {% endif %}
@@ -36,11 +36,45 @@
       {% for rt in ['like','love','wow','support'] %}
       <form method="post" action="{{ url_for('posts.react', post_id=post.id, reaction_type=rt) }}">
         {{ comment_form.csrf_token }}
-        <button class="btn btn-sm btn-outline-secondary">{{ rt }} ({{ reaction_stats.get(post.id, {}).get(rt, 0) }})</button>
+        <button class="btn btn-sm btn-outline-secondary reaction-btn">{{ rt }} ({{ reaction_stats.get(post.id, {}).get(rt, 0) }})</button>
       </form>
       {% endfor %}
+      {% if current_user.is_moderator %}
+      <form method="post" action="{{ url_for('posts.archive_post', post_id=post.id) }}" class="d-flex gap-2">
+        {{ comment_form.csrf_token }}
+        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Motivo de archivo (opcional)">
+        <button class="btn btn-sm btn-outline-warning">Archivar post</button>
+      </form>
+      {% endif %}
     </div>
     <hr>
+    <div class="mb-3">
+      <h4 class="h6">Comentarios</h4>
+      {% set visible_comments = post.comments|selectattr('is_archived', 'equalto', false)|list %}
+      {% if visible_comments %}
+        {% for c in visible_comments|sort(attribute='created_at', reverse=true) %}
+          <div class="chat-message mb-2">
+            <div class="d-flex justify-content-between">
+              <strong>@{{ c.author.username if c.author else ('user-' ~ c.user_id) }}</strong>
+              <small class="text-muted">{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+            </div>
+            <div>{{ c.content }}</div>
+            {% if c.tagged_users %}
+            <small class="text-muted">Etiquetas: {{ c.tagged_users }}</small>
+            {% endif %}
+            {% if current_user.is_moderator %}
+            <form method="post" action="{{ url_for('posts.archive_comment', comment_id=c.id) }}" class="mt-2 d-flex gap-2">
+              {{ comment_form.csrf_token }}
+              <input type="text" name="reason" class="form-control form-control-sm" placeholder="Motivo de archivo (opcional)">
+              <button class="btn btn-sm btn-outline-warning">Archivar comentario</button>
+            </form>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <small class="text-muted">Aun no hay comentarios.</small>
+      {% endif %}
+    </div>
     <form method="post" action="{{ url_for('posts.comment', post_id=post.id) }}">
       {{ comment_form.hidden_tag() }}
       <div class="mb-2">{{ comment_form.content(class="form-control", rows="2", placeholder="Comenta y etiqueta usuarios") }}</div>
@@ -50,6 +84,9 @@
   </div>
 </article>
 {% else %}
-<p>No hay publicaciones aun.</p>
+<div class="empty-state fade-in-up">
+  <i class="bi bi-chat-square-text"></i>
+  <p class="mb-0">No hay publicaciones aun. Se la primera persona en compartir algo.</p>
+</div>
 {% endfor %}
 {% endblock %}

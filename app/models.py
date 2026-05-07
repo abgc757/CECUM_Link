@@ -8,6 +8,7 @@ from app.extensions import db, login_manager
 
 
 class UserRole(str, Enum):
+    ADMIN = "admin"
     STUDENT = "student"
     TEACHER = "teacher"
     MODERATOR = "moderator"
@@ -37,11 +38,21 @@ class User(UserMixin, db.Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password: str) -> bool:
+        if not self.password_hash:
+            return False
         return check_password_hash(self.password_hash, password)
 
     @property
+    def needs_password_setup(self) -> bool:
+        return not bool(self.password_hash)
+
+    @property
     def is_moderator(self) -> bool:
-        return self.role in {UserRole.MODERATOR.value, UserRole.TEACHER.value}
+        return self.role in {UserRole.ADMIN.value, UserRole.MODERATOR.value, UserRole.TEACHER.value}
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == UserRole.ADMIN.value
 
 
 class Post(db.Model):
@@ -50,6 +61,10 @@ class Post(db.Model):
     media_url = db.Column(db.String(255), default="")
     media_type = db.Column(db.String(20), default="text")
     external_link = db.Column(db.String(255), default="")
+    is_archived = db.Column(db.Boolean, default=False)
+    archived_reason = db.Column(db.String(255), default="")
+    archived_at = db.Column(db.DateTime, nullable=True)
+    archived_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
@@ -70,9 +85,14 @@ class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     tagged_users = db.Column(db.String(255), default="")
+    is_archived = db.Column(db.Boolean, default=False)
+    archived_reason = db.Column(db.String(255), default="")
+    archived_at = db.Column(db.DateTime, nullable=True)
+    archived_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False)
+    author = db.relationship("User", foreign_keys=[user_id])
 
 
 class Event(db.Model):
@@ -105,6 +125,7 @@ class Message(db.Model):
     sent_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     conversation_id = db.Column(db.Integer, db.ForeignKey("conversation.id"), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    sender = db.relationship("User", foreign_keys=[sender_id])
 
 
 class Notification(db.Model):

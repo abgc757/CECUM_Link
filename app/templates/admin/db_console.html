@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Consola de base de datos (solo lectura)</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.dashboard') }}">Volver a admin</a>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div class="mb-2">
+        {{ form.query.label(class="form-label") }}
+        {{ form.query(class="form-control", rows="6", placeholder="SELECT id, username, role FROM user ORDER BY id DESC") }}
+      </div>
+      <div class="row g-2 align-items-end">
+        <div class="col-sm-3">
+          {{ form.limit.label(class="form-label") }}
+          {{ form.limit(class="form-control") }}
+        </div>
+        <div class="col-sm-3">
+          {{ form.submit(class="btn btn-primary w-100") }}
+        </div>
+      </div>
+    </form>
+    <small class="text-muted d-block mt-2">Permitido: SELECT, WITH y PRAGMA. Bloquea sentencias de escritura.</small>
+  </div>
+</div>
+
+{% if ran_query %}
+<div class="card">
+  <div class="card-body">
+    <h2 class="h6">Resultados</h2>
+    {% if rows %}
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle">
+        <thead>
+          <tr>
+            {% for c in columns %}
+            <th>{{ c }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            {% for c in columns %}
+            <td>{{ row[c] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">La consulta no devolvio filas.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

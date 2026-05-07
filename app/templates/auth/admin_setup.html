@@ -1,18 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-5">
+  <div class="col-md-6">
     <div class="card fade-in-up">
       <div class="card-body">
-        <h1 class="h4 mb-3">Iniciar sesion</h1>
-        <p class="text-muted small">Si es el primer ingreso del administrador, escribe su usuario/correo para definir la contrasena.</p>
+        <h1 class="h4 mb-2">Configurar administrador</h1>
+        <p class="text-muted">Primer inicio de sesion para <strong>@{{ admin_user.username }}</strong>. Define una contrasena segura.</p>
         <form method="post">
           {{ form.hidden_tag() }}
-          <div class="mb-3">{{ form.identifier.label }}{{ form.identifier(class="form-control") }}</div>
           <div class="mb-3">{{ form.password.label }}{{ form.password(class="form-control") }}</div>
+          <div class="mb-3">{{ form.confirm_password.label }}{{ form.confirm_password(class="form-control") }}</div>
           {{ form.submit(class="btn btn-primary w-100") }}
         </form>
-        <a href="{{ url_for('auth.register') }}" class="btn btn-link mt-2">Crear cuenta</a>
       </div>
     </div>
   </div>
