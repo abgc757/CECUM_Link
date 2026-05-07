@@ -9,6 +9,7 @@
         <div class="mb-3">
           <h3 class="h6 mb-2">Crear chat privado</h3>
           <form method="post" action="{{ url_for('chat.new_private') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="input-group">
               <select class="form-select" name="user_id" required>
                 <option value="">Selecciona usuario</option>
@@ -23,6 +24,7 @@
         <div class="mb-3">
           <h3 class="h6 mb-2">Crear chat grupal</h3>
           <form method="post" action="{{ url_for('chat.new_group') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input name="name" class="form-control mb-2" placeholder="Nombre del grupo (opcional)">
             <select class="form-select mb-2" name="member_ids" multiple size="4">
               {% for u in users %}
@@ -65,6 +67,7 @@
             {% endfor %}
           </div>
           <form method="post" action="{{ url_for('chat.send_message', conversation_id=selected.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="input-group">
               <input name="content" class="form-control" placeholder="Escribe un mensaje">
               <button class="btn btn-primary">Enviar</button>
