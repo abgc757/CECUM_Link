@@ -38,4 +38,7 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix="/api/v1")
     app.cli.add_command(create_admin_command)
 
+    from .nav_context import register_nav_context   # ← NUEVO
+    register_nav_context(app)                        # ← NUEVO
+
     return app

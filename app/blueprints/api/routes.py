@@ -107,3 +107,15 @@ def bi_query():
     rows = [dict(item) for item in result.mappings().all()]
     columns = list(rows[0].keys()) if rows else []
     return jsonify({"columns": columns, "rows": rows, "row_count": len(rows)})
+
+
+@api_bp.get("/nav-counts")
+@login_required
+def nav_counts():
+    """
+    Endpoint JSON consumido por el JS de base.html cada 60 s.
+    Devuelve los mismos contadores que el context_processor para
+    refrescar los badges del navbar sin recargar la página.
+    """
+    from app.nav_context import get_nav_counts
+    return jsonify(get_nav_counts())
