@@ -15,7 +15,7 @@
             <span>@{{ u.username }} - {{ u.role }}</span>
             {% if current_user.is_admin and u.role != 'admin' and u.role != 'moderator' %}
             <form method="post" action="{{ url_for('admin.promote', user_id=u.id) }}" style="margin: 0;">
-              {{ csrf_token() }}
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <button class="btn btn-sm btn-outline-success">Promover</button>
             </form>
             {% elif u.role == 'admin' %}
@@ -43,7 +43,7 @@
           <li class="list-group-item d-flex justify-content-between align-items-center">
             <span class="text-truncate">{{ p.content }}</span>
             <form method="post" action="{{ url_for('admin.delete_post', post_id=p.id) }}" style="margin: 0;">
-              {{ csrf_token() }}
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <button class="btn btn-sm btn-outline-danger">Eliminar</button>
             </form>
           </li>

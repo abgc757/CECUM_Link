@@ -18,7 +18,7 @@
             <p class="mb-1">{{ p.content }}</p>
             <small class="text-muted d-block mb-2">Motivo: {{ p.archived_reason or 'Sin motivo' }}</small>
             <form method="post" action="{{ url_for('admin.unarchive_post', post_id=p.id) }}" style="margin: 0;">
-              {{ csrf_token() }}
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <button class="btn btn-sm btn-outline-success">Restaurar post</button>
             </form>
           </li>
@@ -44,7 +44,7 @@
             <p class="mb-1">{{ c.content }}</p>
             <small class="text-muted d-block mb-2">Motivo: {{ c.archived_reason or 'Sin motivo' }}</small>
             <form method="post" action="{{ url_for('admin.unarchive_comment', comment_id=c.id) }}" style="margin: 0;">
-              {{ csrf_token() }}
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <button class="btn btn-sm btn-outline-success">Restaurar comentario</button>
             </form>
           </li>

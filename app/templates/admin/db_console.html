@@ -1,51 +1,548 @@
 {% extends "base.html" %}
 {% block content %}
+
+{# ─── estilos de la consola ──────────────────────────────────────────────── #}
+<style>
+  /* ── tipografía y paleta ── */
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --c-bg:        #0d1117;
+    --c-surface:   #161b22;
+    --c-surface2:  #1c2430;
+    --c-border:    #30363d;
+    --c-primary:   #58a6ff;
+    --c-primary-d: #1f6feb;
+    --c-success:   #3fb950;
+    --c-warning:   #d29922;
+    --c-danger:    #f85149;
+    --c-text:      #e6edf3;
+    --c-muted:     #7d8590;
+    --c-keyword:   #ff7b72;
+    --c-string:    #a5d6ff;
+    --c-number:    #79c0ff;
+    --c-comment:   #8b949e;
+    --radius:      8px;
+    --mono:        'JetBrains Mono', 'Fira Code', monospace;
+    --sans:        'DM Sans', system-ui, sans-serif;
+  }
+
+  .db-shell {
+    font-family: var(--sans);
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 48px rgba(0,0,0,.5);
+    margin-bottom: 2rem;
+  }
+
+  /* ── barra superior ── */
+  .db-topbar {
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .db-topbar .dots span {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+  .db-title {
+    font-weight: 700;
+    font-size: .85rem;
+    color: var(--c-muted);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    flex: 1;
+  }
+  .db-badge {
+    font-family: var(--mono);
+    font-size: .7rem;
+    background: var(--c-surface2);
+    border: 1px solid var(--c-border);
+    color: var(--c-muted);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  /* ── layout de 3 columnas ── */
+  .db-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 560px;
+  }
+
+  /* ── sidebar de esquema ── */
+  .db-sidebar {
+    background: var(--c-surface);
+    border-right: 1px solid var(--c-border);
+    grid-row: 1 / 3;
+    overflow-y: auto;
+    padding: 12px 0;
+    font-size: .78rem;
+    font-family: var(--mono);
+  }
+  .db-sidebar-title {
+    color: var(--c-muted);
+    padding: 0 12px 6px;
+    font-size: .65rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .db-table-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--c-text);
+    padding: 5px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background .15s;
+  }
+  .db-table-btn:hover { background: var(--c-surface2); }
+  .db-table-btn.active { background: var(--c-primary-d); color: #fff; }
+  .db-table-icon { color: var(--c-primary); font-style: normal; }
+  .db-col-list {
+    display: none;
+    padding: 2px 0 4px 24px;
+  }
+  .db-col-list.open { display: block; }
+  .db-col-item {
+    display: flex;
+    gap: 6px;
+    padding: 2px 12px 2px 0;
+    color: var(--c-muted);
+    font-size: .72rem;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .db-col-item:hover { color: var(--c-text); }
+  .db-col-type {
+    color: var(--c-number);
+    flex-shrink: 0;
+  }
+  .db-col-pk { color: var(--c-warning); margin-right: 2px; }
+
+  /* ── área del editor ── */
+  .db-editor-area {
+    display: flex;
+    flex-direction: column;
+    background: var(--c-bg);
+  }
+
+  /* ── toolbar del editor ── */
+  .db-toolbar {
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    padding: 8px 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .db-btn {
+    font-family: var(--sans);
+    font-size: .75rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--c-border);
+    cursor: pointer;
+    transition: all .15s;
+    background: var(--c-surface2);
+    color: var(--c-text);
+    white-space: nowrap;
+  }
+  .db-btn:hover { border-color: var(--c-primary); color: var(--c-primary); }
+  .db-btn.run {
+    background: var(--c-primary-d);
+    border-color: var(--c-primary);
+    color: #fff;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .db-btn.run:hover { background: var(--c-primary); }
+  .db-btn.danger:hover { border-color: var(--c-danger); color: var(--c-danger); }
+  .db-btn-sep { flex: 1; }
+  .db-limit {
+    font-family: var(--mono);
+    font-size: .75rem;
+    background: var(--c-surface2);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    color: var(--c-text);
+    padding: 3px 8px;
+    width: 80px;
+  }
+  .db-limit:focus { outline: none; border-color: var(--c-primary); }
+
+  /* ── textarea del editor ── */
+  .db-editor-wrap { position: relative; }
+  .db-editor {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.65;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: none;
+    width: 100%;
+    padding: 14px 16px;
+    resize: vertical;
+    min-height: 160px;
+    max-height: 360px;
+    outline: none;
+    caret-color: var(--c-primary);
+  }
+  .db-editor::placeholder { color: var(--c-muted); }
+  .db-editor:focus { background: #0d111a; }
+
+  /* ── sección de plantillas ── */
+  .db-presets {
+    border-top: 1px solid var(--c-border);
+    padding: 10px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: var(--c-surface);
+  }
+  .db-preset-btn {
+    font-family: var(--sans);
+    font-size: .72rem;
+    background: var(--c-surface2);
+    border: 1px solid var(--c-border);
+    color: var(--c-muted);
+    border-radius: 20px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .db-preset-btn:hover {
+    background: var(--c-primary-d);
+    border-color: var(--c-primary);
+    color: #fff;
+  }
+
+  /* ── resultados ── */
+  .db-results {
+    border-top: 1px solid var(--c-border);
+    overflow: hidden;
+  }
+  .db-results-bar {
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    padding: 7px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .db-results-bar .stat {
+    font-family: var(--mono);
+    font-size: .72rem;
+    color: var(--c-muted);
+  }
+  .db-results-bar .stat strong { color: var(--c-text); }
+  .db-results-bar .spacer { flex: 1; }
+
+  .db-table-wrap {
+    overflow: auto;
+    max-height: 380px;
+  }
+  .db-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+  .db-table thead th {
+    background: var(--c-surface);
+    color: var(--c-primary);
+    padding: 7px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--c-border);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .db-table thead th .col-type {
+    font-size: .65rem;
+    color: var(--c-muted);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .db-table tbody tr { border-bottom: 1px solid var(--c-border); transition: background .1s; }
+  .db-table tbody tr:hover { background: var(--c-surface2); }
+  .db-table td {
+    padding: 6px 12px;
+    color: var(--c-text);
+    white-space: nowrap;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+  .db-table td.num { color: var(--c-number); text-align: right; }
+  .db-table td.null-val { color: var(--c-muted); font-style: italic; }
+  .db-table td.bool-true { color: var(--c-success); }
+  .db-table td.bool-false { color: var(--c-danger); }
+  .db-table td.row-idx { color: var(--c-muted); font-size: .68rem; text-align: right; }
+  .db-table td.truncated { cursor: help; }
+
+  /* ── historial ── */
+  .db-history {
+    border-top: 1px solid var(--c-border);
+    background: var(--c-surface);
+    padding: 10px 14px;
+  }
+  .db-history-title {
+    font-size: .7rem;
+    color: var(--c-muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .db-history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--c-surface2);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: border-color .15s;
+    overflow: hidden;
+  }
+  .db-history-item:hover { border-color: var(--c-primary); }
+  .db-history-sql {
+    font-family: var(--mono);
+    font-size: .72rem;
+    color: var(--c-text);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .db-history-meta {
+    font-size: .65rem;
+    color: var(--c-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── error ── */
+  .db-error {
+    font-family: var(--mono);
+    font-size: .8rem;
+    background: rgba(248,81,73,.12);
+    border-left: 3px solid var(--c-danger);
+    color: var(--c-danger);
+    padding: 10px 14px;
+    margin: 12px;
+    border-radius: 0 6px 6px 0;
+  }
+
+  /* ── empty state ── */
+  .db-empty {
+    padding: 32px;
+    text-align: center;
+    color: var(--c-muted);
+    font-size: .85rem;
+  }
+
+  /* animación de ejecución */
+  @keyframes pulse-run {
+    0%,100% { box-shadow: 0 0 0 0 rgba(88,166,255,.4); }
+    50%      { box-shadow: 0 0 0 6px rgba(88,166,255,0); }
+  }
+  .db-btn.run.loading { animation: pulse-run .7s infinite; }
+
+  /* responsive */
+  @media (max-width: 640px) {
+    .db-layout { grid-template-columns: 1fr; }
+    .db-sidebar { border-right: none; border-bottom: 1px solid var(--c-border); }
+  }
+</style>
+
+{# ─── FORM oculto (CSRF) ─────────────────────────────────────────────────── #}
+<form id="main-form" method="post" style="display:none">
+  {{ form.hidden_tag() }}
+  <textarea name="query" id="form-query"></textarea>
+  <input type="number" name="limit" id="form-limit" value="200">
+</form>
+
+{# ─── cabecera de página ─────────────────────────────────────────────────── #}
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0">Consola de base de datos (solo lectura)</h1>
-  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.dashboard') }}">Volver a admin</a>
+  <h1 class="h5 mb-0" style="font-family:'DM Sans',sans-serif;font-weight:700;">
+    🛢️ SQL Console
+    <span class="badge bg-warning text-dark ms-2" style="font-size:.65rem;vertical-align:middle;">Solo lectura</span>
+  </h1>
+  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.dashboard') }}">← Admin</a>
 </div>
 
-<div class="card mb-3">
-  <div class="card-body">
-    <form method="post">
-      {{ form.hidden_tag() }}
-      <div class="mb-2">
-        {{ form.query.label(class="form-label") }}
-        {{ form.query(class="form-control", rows="6", placeholder="SELECT id, username, role FROM user ORDER BY id DESC") }}
-      </div>
-      <div class="row g-2 align-items-end">
-        <div class="col-sm-3">
-          {{ form.limit.label(class="form-label") }}
-          {{ form.limit(class="form-control") }}
-        </div>
-        <div class="col-sm-3">
-          {{ form.submit(class="btn btn-primary w-100") }}
-        </div>
-      </div>
-    </form>
-    <small class="text-muted d-block mt-2">Permitido: SELECT, WITH y PRAGMA. Bloquea sentencias de escritura.</small>
+{# ─── mensajes flash ─────────────────────────────────────────────────────── #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }} py-2 small" style="border-radius:8px;">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{#   SHELL PRINCIPAL                                                          #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+<div class="db-shell">
+
+  {# barra de título #}
+  <div class="db-topbar">
+    <div class="dots d-flex gap-1">
+      <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
+    </div>
+    <span class="db-title">CECUM Link · Database Console</span>
+    <span class="db-badge" id="db-engine-badge">SQLite</span>
+    <span class="db-badge" id="db-table-count">{{ schema|length }} tablas</span>
   </div>
-</div>
 
-{% if ran_query %}
-<div class="card">
-  <div class="card-body">
-    <h2 class="h6">Resultados</h2>
-    {% if rows %}
-    <div class="table-responsive">
-      <table class="table table-sm table-striped align-middle">
+  {# layout ─ sidebar + editor #}
+  <div class="db-layout">
+
+    {# ── SIDEBAR: explorador de esquema ── #}
+    <div class="db-sidebar">
+      <div class="db-sidebar-title">Esquema</div>
+      {% for table_name, cols in schema.items() %}
+      <button class="db-table-btn" onclick="toggleTable('{{ table_name }}')" id="tbl-btn-{{ table_name }}">
+        <i class="db-table-icon">⬡</i>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ table_name }}</span>
+        <small style="color:var(--c-muted)">{{ cols|length }}</small>
+      </button>
+      <div class="db-col-list" id="tbl-cols-{{ table_name }}">
+        {% for col in cols %}
+        <div class="db-col-item" onclick="insertColumn('{{ table_name }}', '{{ col.name }}')" title="{{ col.type }}">
+          {% if col.pk %}<span class="db-col-pk">🔑</span>{% endif %}
+          <span>{{ col.name }}</span>
+          <span class="db-col-type">{{ col.type.split('(')[0]|lower }}</span>
+        </div>
+        {% endfor %}
+        <div class="db-col-item" style="color:var(--c-primary);padding-top:4px;"
+             onclick="loadPreviewQuery('{{ table_name }}')">
+          ▶ SELECT * FROM {{ table_name }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# ── EDITOR ── #}
+    <div class="db-editor-area">
+
+      {# toolbar #}
+      <div class="db-toolbar">
+        <button class="db-btn run" id="run-btn" onclick="runQuery()">
+          <span>▶</span> Ejecutar
+          <kbd style="font-size:.6rem;opacity:.6;border:1px solid rgba(255,255,255,.3);border-radius:3px;padding:0 3px;">⌃↵</kbd>
+        </button>
+        <button class="db-btn" onclick="formatQuery()">≡ Formatear</button>
+        <button class="db-btn" onclick="clearEditor()">✕ Limpiar</button>
+        <span class="db-btn-sep"></span>
+        <label style="font-size:.72rem;color:var(--c-muted);white-space:nowrap;">
+          Límite&nbsp;
+          <input class="db-limit" id="limit-input" type="number" value="200" min="1" max="5000">
+        </label>
+      </div>
+
+      {# textarea #}
+      <div class="db-editor-wrap">
+        <textarea
+          id="sql-editor"
+          class="db-editor"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          placeholder="-- Escribe tu consulta SQL aquí
+SELECT id, username, email, role
+FROM   user
+ORDER  BY created_at DESC;"
+        >{{ form.query.data or '' }}</textarea>
+      </div>
+
+      {# plantillas rápidas #}
+      <div class="db-presets">
+        {% for p in presets %}
+        <button class="db-preset-btn" onclick="loadPreset({{ loop.index0 }})" title="{{ p.sql }}">
+          {{ p.icon }} {{ p.label }}
+        </button>
+        {% endfor %}
+      </div>
+
+    </div>{# /db-editor-area #}
+
+    {# ── RESULTADOS (ocupa ambas columnas horizontalmente) ── #}
+
+  </div>{# /db-layout #}
+
+  {# resultados (fuera del grid para ancho completo) #}
+  {% if ran_query %}
+  <div class="db-results" id="results-section">
+    {% if error %}
+    <div class="db-error">
+      <strong>Error:</strong> {{ error }}
+    </div>
+    {% elif rows %}
+    <div class="db-results-bar">
+      <span class="stat"><strong>{{ rows|length }}</strong> filas</span>
+      <span class="stat"><strong>{{ elapsed_ms }} ms</strong></span>
+      <span class="stat"><strong>{{ columns|length }}</strong> columnas</span>
+      <span class="spacer"></span>
+      <button class="db-btn" onclick="exportData('csv')">⬇ CSV</button>
+      <button class="db-btn" onclick="exportData('json')">⬇ JSON</button>
+      <button class="db-btn" onclick="copyTSV()">📋 Copiar</button>
+    </div>
+    <div class="db-table-wrap" id="result-table-wrap">
+      <table class="db-table" id="result-table">
         <thead>
           <tr>
-            {% for c in columns %}
-            <th>{{ c }}</th>
+            <th style="width:40px;"></th>
+            {% for col in columns %}
+            <th>{{ col }}</th>
             {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% for row in rows %}
           <tr>
-            {% for c in columns %}
-            <td>{{ row[c] }}</td>
+            <td class="row-idx">{{ loop.index }}</td>
+            {% for col in columns %}
+            {% set val = row[col] %}
+            {% if val is none %}
+              <td class="null-val">NULL</td>
+            {% elif val == true or val == 1 and col.startswith('is_') %}
+              <td class="bool-true">true</td>
+            {% elif val == false or val == 0 and col.startswith('is_') %}
+              <td class="bool-false">false</td>
+            {% elif val is number %}
+              <td class="num">{{ val }}</td>
+            {% elif val|string|length > 80 %}
+              <td class="truncated" title="{{ val }}">{{ val|string|truncate(80) }}</td>
+            {% else %}
+              <td>{{ val }}</td>
+            {% endif %}
             {% endfor %}
           </tr>
           {% endfor %}
@@ -53,9 +550,204 @@
       </table>
     </div>
     {% else %}
-    <p class="text-muted mb-0">La consulta no devolvio filas.</p>
+    <div class="db-empty">
+      ✓ Consulta ejecutada · Sin filas devueltas
+    </div>
     {% endif %}
   </div>
-</div>
-{% endif %}
+  {% endif %}
+
+  {# historial #}
+  {% if history %}
+  <div class="db-history">
+    <div class="db-history-title">
+      <span>Historial reciente</span>
+      <button class="db-btn danger" onclick="clearHistory()" style="font-size:.65rem;padding:2px 8px;">
+        🗑 Limpiar
+      </button>
+    </div>
+    {% for entry in history %}
+    <div class="db-history-item" onclick="loadHistoryEntry(`{{ entry.sql | replace('`','\\`') | replace('\n',' ') }}`)">
+      <span class="db-history-sql">{{ entry.sql | replace('\n',' ') }}</span>
+      <span class="db-history-meta">{{ entry.rows }} f · {{ entry.elapsed }}ms · {{ entry.ts }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>{# /db-shell #}
+
+{# ─── datos para JS ──────────────────────────────────────────────────────── #}
+<script>
+  const PRESETS = {{ presets | tojson }};
+  const LAST_COLS  = {{ columns | tojson }};
+  const LAST_ROWS  = {{ rows | tojson }};
+  const SCHEMA     = {{ schema | tojson }};
+
+  const EXPORT_URL  = "{{ url_for('admin.db_console_export') }}";
+  const HISTORY_CLEAR_URL = "{{ url_for('admin.db_console_history_clear') }}";
+  const CSRF_TOKEN  = document.querySelector('input[name="csrf_token"]')?.value || "";
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+
+  const editor = () => document.getElementById('sql-editor');
+  const limitEl = () => document.getElementById('limit-input');
+
+  // Abrir/cerrar tabla en sidebar
+  function toggleTable(name) {
+    const colList = document.getElementById(`tbl-cols-${name}`);
+    const btn = document.getElementById(`tbl-btn-${name}`);
+    const open = colList.classList.toggle('open');
+    btn.classList.toggle('active', open);
+    if (open) {
+      // colapsar el resto
+      document.querySelectorAll('.db-col-list.open').forEach(el => {
+        if (el.id !== `tbl-cols-${name}`) {
+          el.classList.remove('open');
+          document.getElementById(el.id.replace('tbl-cols-', 'tbl-btn-')).classList.remove('active');
+        }
+      });
+    }
+  }
+
+  // Insertar nombre de columna en el cursor
+  function insertColumn(table, col) {
+    const ta = editor();
+    const [s, e] = [ta.selectionStart, ta.selectionEnd];
+    const v = ta.value;
+    ta.value = v.slice(0, s) + col + v.slice(e);
+    ta.selectionStart = ta.selectionEnd = s + col.length;
+    ta.focus();
+  }
+
+  // Precargar SELECT * de una tabla
+  function loadPreviewQuery(table) {
+    editor().value = `SELECT *\nFROM   ${table}\nLIMIT  100`;
+    editor().focus();
+  }
+
+  // Cargar plantilla predefinida
+  function loadPreset(idx) {
+    editor().value = PRESETS[idx].sql;
+    editor().focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Cargar desde historial
+  function loadHistoryEntry(sql) {
+    editor().value = sql;
+    editor().focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Formateo básico (mayúsculas en keywords)
+  const SQL_KEYWORDS = [
+    'SELECT','FROM','WHERE','JOIN','LEFT JOIN','RIGHT JOIN','INNER JOIN',
+    'ON','GROUP BY','ORDER BY','HAVING','LIMIT','OFFSET','AS','AND','OR',
+    'NOT','IN','IS','NULL','LIKE','BETWEEN','DISTINCT','COUNT','SUM','AVG',
+    'MAX','MIN','CASE','WHEN','THEN','ELSE','END','WITH','UNION','INTERSECT',
+    'EXCEPT','INSERT','UPDATE','DELETE',
+  ];
+  function formatQuery() {
+    let sql = editor().value;
+    SQL_KEYWORDS.forEach(kw => {
+      const re = new RegExp(`\\b${kw}\\b`, 'gi');
+      sql = sql.replace(re, kw);
+    });
+    // Saltos de línea antes de keywords principales
+    ['SELECT','FROM','WHERE','JOIN','LEFT JOIN','RIGHT JOIN','INNER JOIN',
+     'GROUP BY','ORDER BY','HAVING','LIMIT','UNION'].forEach(kw => {
+      const re = new RegExp(`(?<!\\n)\\s+\\b${kw}\\b`, 'g');
+      sql = sql.replace(re, `\n${kw}`);
+    });
+    editor().value = sql.trim();
+    editor().focus();
+  }
+
+  function clearEditor() {
+    editor().value = '';
+    editor().focus();
+  }
+
+  // Ejecutar consulta (submit del form oculto)
+  function runQuery() {
+    const sql = editor().value.trim();
+    if (!sql) return;
+    document.getElementById('form-query').value = sql;
+    document.getElementById('form-limit').value = limitEl().value || 200;
+
+    const btn = document.getElementById('run-btn');
+    btn.classList.add('loading');
+    btn.textContent = '⏳ Ejecutando…';
+
+    document.getElementById('main-form').submit();
+  }
+
+  // Exportar datos (CSV / JSON)
+  async function exportData(fmt) {
+    if (!LAST_COLS.length) { alert('Sin datos para exportar'); return; }
+    const res = await fetch(EXPORT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ columns: LAST_COLS, rows: LAST_ROWS, format: fmt }),
+    });
+    if (!res.ok) { alert('Error al exportar'); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    const cd = res.headers.get('Content-Disposition') || '';
+    a.download = cd.match(/filename="([^"]+)"/)?.[1] || `export.${fmt}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Copiar como TSV (para pegar en Excel/Sheets)
+  function copyTSV() {
+    if (!LAST_COLS.length) return;
+    let tsv = LAST_COLS.join('\t') + '\n';
+    LAST_ROWS.forEach(r => {
+      tsv += LAST_COLS.map(c => (r[c] ?? '')).join('\t') + '\n';
+    });
+    navigator.clipboard.writeText(tsv)
+      .then(() => alert(`${LAST_ROWS.length} filas copiadas al portapapeles (formato TSV)`))
+      .catch(() => alert('Error al copiar'));
+  }
+
+  // Limpiar historial
+  async function clearHistory() {
+    if (!confirm('¿Limpiar todo el historial?')) return;
+    await fetch(HISTORY_CLEAR_URL, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF_TOKEN },
+    });
+    location.reload();
+  }
+
+  // Atajos de teclado
+  document.addEventListener('keydown', e => {
+    // Ctrl/Cmd + Enter → ejecutar
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runQuery();
+    }
+    // Tab en el editor → insertar espacios (no saltar de campo)
+    if (e.key === 'Tab' && document.activeElement === editor()) {
+      e.preventDefault();
+      const ta = editor();
+      const [s] = [ta.selectionStart];
+      ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(ta.selectionEnd);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+    }
+  });
+
+  // Detectar motor de BD
+  (function detectEngine() {
+    const badge = document.getElementById('db-engine-badge');
+    const uri   = "{{ config.get('SQLALCHEMY_DATABASE_URI', '') }}";
+    if (uri.startsWith('postgresql'))  badge.textContent = 'PostgreSQL';
+    else if (uri.startsWith('mysql')) badge.textContent = 'MySQL';
+    else badge.textContent = 'SQLite';
+  })();
+</script>
 {% endblock %}
